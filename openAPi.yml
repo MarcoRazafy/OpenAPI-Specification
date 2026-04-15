@@ -1,0 +1,224 @@
+openapi: 3.0.3
+info:
+  title: Ingredient Management API
+  version: 1.0.0
+  description: API REST for ingredient and dish management based on TD5 Spring Boot.
+
+servers:
+  - url: http://localhost:8080
+
+paths:
+  /ingredients:
+    get:
+      summary: Get all ingredients
+      operationId: getIngredients
+      responses:
+        '200':
+          description: Returns the list of ingredients stored in database.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ingredient'
+
+  /ingredients/{id}:
+    get:
+      summary: Get one ingredient by id
+      operationId: getIngredientById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Ingredient identifier
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Returns the ingredient matching the provided id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ingredient'
+        '404':
+          description: Ingredient not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Ingredient.id=1 is not found
+
+  /ingredients/{id}/stock:
+    get:
+      summary: Get ingredient stock value at a given time and unit
+      operationId: getIngredientStockAt
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Ingredient identifier
+          schema:
+            type: integer
+        - name: at
+          in: query
+          required: true
+          description: Temporal value used to retrieve stock at a specific moment
+          schema:
+            type: string
+            format: date-time
+        - name: unit
+          in: query
+          required: true
+          description: Unit used to retrieve stock
+          schema:
+            $ref: '#/components/schemas/Unit'
+      responses:
+        '200':
+          description: Returns the stock value of the ingredient for the given id, time and unit.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngredientStock'
+        '400':
+          description: Missing mandatory query parameter
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Either mandatory query parameter `at` or `unit` is not provided.
+        '404':
+          description: Ingredient not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Ingredient.id=1 is not found
+
+  /dishes:
+    get:
+      summary: Get all dishes
+      operationId: getDishes
+      responses:
+        '200':
+          description: Returns the list of dishes stored in database.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Dish'
+
+  /dishes/{id}/ingredients:
+    put:
+      summary: Update ingredients associated to a dish
+      operationId: updateDishIngredients
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Dish identifier
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        description: List of ingredients to associate or dissociate to the dish
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/Ingredient'
+      responses:
+        '200':
+          description: Dish ingredients updated successfully.
+        '400':
+          description: Missing mandatory request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Request body is required.
+        '404':
+          description: Dish not found
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: Dish.id=1 is not found
+
+components:
+  schemas:
+    Ingredient:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Tomato
+        category:
+          $ref: '#/components/schemas/CategoryEnum'
+        price:
+          type: number
+          format: double
+          example: 1000.0
+      required:
+        - id
+        - name
+        - category
+        - price
+
+    IngredientStock:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        stock:
+          type: number
+          format: double
+          example: 15.0
+      required:
+        - id
+        - stock
+
+    Dish:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Pizza
+        price:
+          type: number
+          format: double
+          example: 20000.0
+        ingredients:
+          type: array
+          items:
+            $ref: '#/components/schemas/Ingredient'
+      required:
+        - id
+        - name
+        - price
+        - ingredients
+
+    CategoryEnum:
+      type: string
+      enum:
+        - VEGETABLE
+        - ANIMAL
+        - MARINE
+        - DAIRY
+        - OTHER
+
+    Unit:
+      type: string
+      enum:
+        - G
+        - KG
+        - L
+        - PCS
