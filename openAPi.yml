@@ -1,8 +1,10 @@
 openapi: 3.0.3
 info:
-  title: Ingredient Management API
+  title: API REST - Gestion des ingrédients
   version: 1.0.0
-  description: API REST for ingredient and dish management based on TD5 Spring Boot.
+  description: >
+    Spécification OAS3 correspondant aux implémentations attendues
+    dans le TD5 Spring Boot sur le thème de la gestion des ingrédients.
 
 servers:
   - url: http://localhost:8080
@@ -10,11 +12,17 @@ servers:
 paths:
   /ingredients:
     get:
-      summary: Get all ingredients
-      operationId: getIngredients
+      tags:
+        - Ingredient
+      summary: Retourner la liste des ingrédients
+      description: >
+        Retourne une liste d'objets JSON relatifs aux ingrédients et
+        contenant les attributs : identifiant, nom, catégorie de
+        l'ingrédient et prix. Les objets retournés doivent être ceux
+        enregistrés dans la base de données.
       responses:
         '200':
-          description: Returns the list of ingredients stored in database.
+          description: Liste des ingrédients retournée avec succès
           content:
             application/json:
               schema:
@@ -24,24 +32,29 @@ paths:
 
   /ingredients/{id}:
     get:
-      summary: Get one ingredient by id
-      operationId: getIngredientById
+      tags:
+        - Ingredient
+      summary: Retourner un ingrédient par identifiant
+      description: >
+        Retourne un objet JSON relatif à l'ingrédient portant l'identifiant
+        fourni à travers {id} et contenant les attributs : identifiant, nom,
+        catégorie de l'ingrédient et prix.
       parameters:
         - name: id
           in: path
           required: true
-          description: Ingredient identifier
+          description: Identifiant de l'ingrédient
           schema:
             type: integer
       responses:
         '200':
-          description: Returns the ingredient matching the provided id.
+          description: Ingrédient retourné avec succès
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Ingredient'
         '404':
-          description: Ingredient not found
+          description: Ingrédient non trouvé
           content:
             text/plain:
               schema:
@@ -50,44 +63,52 @@ paths:
 
   /ingredients/{id}/stock:
     get:
-      summary: Get ingredient stock value at a given time and unit
-      operationId: getIngredientStockAt
+      tags:
+        - Ingredient
+      summary: Retourner la valeur du stock d'un ingrédient
+      description: >
+        Retourne un objet JSON relatif à la valeur de stock de l'ingrédient
+        portant l'identifiant fourni à travers {id} et contenant les
+        attributs : unité (PCS, KG, L) et la valeur du stock de type nombre.
+        Les paramètres de requêtes at et unit doivent être obligatoires afin
+        de déterminer à quel moment voulons récupérer la valeur du stock de
+        l'ingrédient.
       parameters:
         - name: id
           in: path
           required: true
-          description: Ingredient identifier
+          description: Identifiant de l'ingrédient
           schema:
             type: integer
         - name: at
           in: query
           required: true
-          description: Temporal value used to retrieve stock at a specific moment
+          description: Instant auquel récupérer la valeur du stock
           schema:
             type: string
             format: date-time
         - name: unit
           in: query
           required: true
-          description: Unit used to retrieve stock
+          description: Unité du stock
           schema:
             $ref: '#/components/schemas/Unit'
       responses:
         '200':
-          description: Returns the stock value of the ingredient for the given id, time and unit.
+          description: Valeur du stock retournée avec succès
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/IngredientStock'
         '400':
-          description: Missing mandatory query parameter
+          description: Paramètre de requête obligatoire absent
           content:
             text/plain:
               schema:
                 type: string
                 example: Either mandatory query parameter `at` or `unit` is not provided.
         '404':
-          description: Ingredient not found
+          description: Ingrédient non trouvé
           content:
             text/plain:
               schema:
@@ -96,11 +117,18 @@ paths:
 
   /dishes:
     get:
-      summary: Get all dishes
-      operationId: getDishes
+      tags:
+        - Dish
+      summary: Retourner la liste des plats
+      description: >
+        Retourne une liste d'objets JSON relatifs aux plats et contenant
+        les attributs : identifiant, nom, prix de vente et la liste des
+        ingrédients les composant. Un ingrédient est composé des attributs :
+        identifiant, nom, catégorie de l'ingrédient et prix. Les objets
+        retournés doivent être ceux enregistrés dans la base de données.
       responses:
         '200':
-          description: Returns the list of dishes stored in database.
+          description: Liste des plats retournée avec succès
           content:
             application/json:
               schema:
@@ -110,18 +138,32 @@ paths:
 
   /dishes/{id}/ingredients:
     put:
-      summary: Update ingredients associated to a dish
-      operationId: updateDishIngredients
+      tags:
+        - Dish
+      summary: Modifier les ingrédients associés à un plat
+      description: >
+        Permet de modifier (détacher ou associer) une liste d'ingrédients
+        au plat ayant l'identifiant {id} fourni. La requête doit contenir
+        un corps de requête contenant la liste d'objets JSON correspondants
+        aux ingrédients que l'on veut associer ou dissocier au plat. Un corps
+        de requête vide doit être obligatoire, sinon une réponse avec un code
+        statut 400 devrait être retournée avec un message explicite.
+
+        Dans le cas où des éléments des ingrédients fournis dans le corps
+        de la requête sont différents des éléments enregistrés dans la base
+        de données, alors ignorer juste ces nouveaux éléments là, notamment
+        l'endpoint sert juste à associer ou dissocier et non modifier les
+        informations des ingrédients lors de l'association ou la dissociation.
       parameters:
         - name: id
           in: path
           required: true
-          description: Dish identifier
+          description: Identifiant du plat
           schema:
             type: integer
       requestBody:
         required: true
-        description: List of ingredients to associate or dissociate to the dish
+        description: Liste des ingrédients à associer ou dissocier
         content:
           application/json:
             schema:
@@ -130,16 +172,16 @@ paths:
                 $ref: '#/components/schemas/Ingredient'
       responses:
         '200':
-          description: Dish ingredients updated successfully.
+          description: Modification effectuée avec succès
         '400':
-          description: Missing mandatory request body
+          description: Corps de requête absent ou invalide
           content:
             text/plain:
               schema:
                 type: string
                 example: Request body is required.
         '404':
-          description: Dish not found
+          description: Plat non trouvé
           content:
             text/plain:
               schema:
@@ -153,15 +195,18 @@ components:
       properties:
         id:
           type: integer
+          description: Identifiant de l'ingrédient
           example: 1
         name:
           type: string
+          description: Nom de l'ingrédient
           example: Tomato
         category:
           $ref: '#/components/schemas/CategoryEnum'
         price:
           type: number
           format: double
+          description: Prix de l'ingrédient
           example: 1000.0
       required:
         - id
@@ -169,35 +214,25 @@ components:
         - category
         - price
 
-    IngredientStock:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 1
-        stock:
-          type: number
-          format: double
-          example: 15.0
-      required:
-        - id
-        - stock
-
     Dish:
       type: object
       properties:
         id:
           type: integer
+          description: Identifiant du plat
           example: 1
         name:
           type: string
+          description: Nom du plat
           example: Pizza
         price:
           type: number
           format: double
+          description: Prix de vente du plat
           example: 20000.0
         ingredients:
           type: array
+          description: Liste des ingrédients composant le plat
           items:
             $ref: '#/components/schemas/Ingredient'
       required:
@@ -205,6 +240,20 @@ components:
         - name
         - price
         - ingredients
+
+    IngredientStock:
+      type: object
+      properties:
+        unit:
+          $ref: '#/components/schemas/Unit'
+        stock:
+          type: number
+          format: double
+          description: Valeur numérique du stock
+          example: 15.0
+      required:
+        - unit
+        - stock
 
     CategoryEnum:
       type: string
@@ -218,7 +267,6 @@ components:
     Unit:
       type: string
       enum:
-        - G
+        - PCS
         - KG
         - L
-        - PCS
